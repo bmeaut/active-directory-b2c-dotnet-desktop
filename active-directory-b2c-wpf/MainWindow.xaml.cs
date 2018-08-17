@@ -29,13 +29,14 @@ namespace active_directory_b2c_wpf
         {
             InitializeComponent();
         }
-        
+
         private async void SignInButton_Click(object sender, RoutedEventArgs e)
         {
             AuthenticationResult authResult = null;
             try
             {
-                authResult = await App.PublicClientApp.AcquireTokenAsync(App.ApiScopes, GetUserByPolicy(App.PublicClientApp.Users, App.PolicySignUpSignIn), UIBehavior.SelectAccount, string.Empty, null, App.Authority);
+                var accounts = await App.PublicClientApp.GetAccountsAsync();
+                authResult = await App.PublicClientApp.AcquireTokenAsync(App.ApiScopes, GetUserByPolicy(accounts, App.PolicySignUpSignIn), UIBehavior.SelectAccount, string.Empty, null, App.Authority);
                 DisplayBasicTokenInfo(authResult);
                 UpdateSignInState(true);
             }
@@ -45,7 +46,8 @@ namespace active_directory_b2c_wpf
                 {
                     if (ex.Message.Contains("AADB2C90118"))
                     {
-                        authResult = await App.PublicClientApp.AcquireTokenAsync(App.ApiScopes, GetUserByPolicy(App.PublicClientApp.Users, App.PolicySignUpSignIn), UIBehavior.SelectAccount, string.Empty, null, App.AuthorityResetPassword);
+                        var accounts = await App.PublicClientApp.GetAccountsAsync();
+                        authResult = await App.PublicClientApp.AcquireTokenAsync(App.ApiScopes, GetUserByPolicy(accounts, App.PolicySignUpSignIn), UIBehavior.SelectAccount, string.Empty, null, App.AuthorityResetPassword);
                     }
                     else
                     {
@@ -58,30 +60,34 @@ namespace active_directory_b2c_wpf
             }
             catch (Exception ex)
             {
-                ResultText.Text = $"Users:{string.Join(",",App.PublicClientApp.Users.Select(u => u.Identifier))}{Environment.NewLine}Error Acquiring Token:{Environment.NewLine}{ex}";
+                var accounts = await App.PublicClientApp.GetAccountsAsync();
+                ResultText.Text = $"Users:{string.Join(",", accounts.Select(u => u.Username))}{Environment.NewLine}Error Acquiring Token:{Environment.NewLine}{ex}";
             }
         }
-        
+
         private async void EditProfileButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 ResultText.Text = $"Calling API:{App.AuthorityEditProfile}";
-                AuthenticationResult authResult = await App.PublicClientApp.AcquireTokenAsync(App.ApiScopes, GetUserByPolicy(App.PublicClientApp.Users, App.PolicyEditProfile), UIBehavior.SelectAccount, string.Empty, null, App.AuthorityEditProfile);
+                var accounts = await App.PublicClientApp.GetAccountsAsync();
+                AuthenticationResult authResult = await App.PublicClientApp.AcquireTokenAsync(App.ApiScopes, GetUserByPolicy(accounts, App.PolicyEditProfile), UIBehavior.SelectAccount, string.Empty, null, App.AuthorityEditProfile);
                 DisplayBasicTokenInfo(authResult);
             }
             catch (Exception ex)
             {
-                ResultText.Text = $"Session has expired, please sign out and back in.{App.AuthorityEditProfile}{Environment.NewLine}{ex}"; 
+                ResultText.Text = $"Session has expired, please sign out and back in.{App.AuthorityEditProfile}{Environment.NewLine}{ex}";
             }
         }
 
         private async void CallApiButton_Click(object sender, RoutedEventArgs e)
         {
             AuthenticationResult authResult = null;
+            var accounts = await App.PublicClientApp.GetAccountsAsync();
+
             try
             {
-                authResult = await App.PublicClientApp.AcquireTokenSilentAsync(App.ApiScopes, GetUserByPolicy(App.PublicClientApp.Users, App.PolicySignUpSignIn), App.Authority, false);
+                authResult = await App.PublicClientApp.AcquireTokenSilentAsync(App.ApiScopes, GetUserByPolicy(accounts, App.PolicySignUpSignIn), App.Authority, false);
             }
             catch (MsalUiRequiredException ex)
             {
@@ -90,7 +96,7 @@ namespace active_directory_b2c_wpf
 
                 try
                 {
-                    authResult = await App.PublicClientApp.AcquireTokenAsync(App.ApiScopes, GetUserByPolicy(App.PublicClientApp.Users, App.PolicySignUpSignIn));
+                    authResult = await App.PublicClientApp.AcquireTokenAsync(App.ApiScopes, GetUserByPolicy(accounts, App.PolicySignUpSignIn));
                 }
                 catch (MsalException msalex)
                 {
@@ -133,22 +139,24 @@ namespace active_directory_b2c_wpf
                 return ex.ToString();
             }
         }
-        
-        private void SignOutButton_Click(object sender, RoutedEventArgs e)
+
+        private async void SignOutButton_Click(object sender, RoutedEventArgs e)
         {
-            if (App.PublicClientApp.Users.Any())
+            var accounts = await App.PublicClientApp.GetAccountsAsync();
+
+            if (accounts.Any())
             {
                 try
                 {
-                    foreach (var user in App.PublicClientApp.Users)
+                    foreach (var user in (accounts))
                     {
-                        App.PublicClientApp.Remove(user);
+                        await App.PublicClientApp.RemoveAsync(user);
                     }
                     UpdateSignInState(false);
                 }
                 catch (MsalException ex)
                 {
-                    ResultText.Text = $"Error signing-out user: {ex.Message}";
+                    Dispatcher.Invoke((() => { ResultText.Text = $"Error signing-out user: {ex.Message}"; }));
                 }
             }
         }
@@ -175,13 +183,13 @@ namespace active_directory_b2c_wpf
                 SignInButton.Visibility = Visibility.Visible;
             }
         }
-        
+
         private void DisplayBasicTokenInfo(AuthenticationResult authResult)
         {
             TokenInfoText.Text = "";
             if (authResult != null)
             {
-                TokenInfoText.Text += $"Name: {authResult.User.Name}" + Environment.NewLine;
+                TokenInfoText.Text += $"Name: {authResult.Account.Username}" + Environment.NewLine;
                 TokenInfoText.Text += $"Token Expires: {authResult.ExpiresOn.ToLocalTime()}" + Environment.NewLine;
                 TokenInfoText.Text += $"Access Token: {authResult.AccessToken}" + Environment.NewLine;
             }
@@ -191,7 +199,9 @@ namespace active_directory_b2c_wpf
         {
             try
             {
-                AuthenticationResult authResult = await App.PublicClientApp.AcquireTokenSilentAsync(App.ApiScopes, GetUserByPolicy(App.PublicClientApp.Users, App.PolicySignUpSignIn), App.Authority, true);
+                var accounts = await App.PublicClientApp.GetAccountsAsync();
+
+                AuthenticationResult authResult = await App.PublicClientApp.AcquireTokenSilentAsync(App.ApiScopes, GetUserByPolicy(accounts, App.PolicySignUpSignIn), App.Authority, true);
                 DisplayBasicTokenInfo(authResult);
                 UpdateSignInState(true);
             }
@@ -209,11 +219,11 @@ namespace active_directory_b2c_wpf
             }
         }
 
-        private IUser GetUserByPolicy(IEnumerable<IUser> users, string policy)
+        private IAccount GetUserByPolicy(IEnumerable<IAccount> users, string policy)
         {
             foreach (var user in users)
             {
-                string userIdentifier = Base64UrlDecode(user.Identifier.Split('.')[0]);
+                string userIdentifier = Base64UrlDecode(user.HomeAccountId.Identifier.Split('.')[0]);
                 if (userIdentifier.EndsWith(policy.ToLower())) return user;
             }
 
