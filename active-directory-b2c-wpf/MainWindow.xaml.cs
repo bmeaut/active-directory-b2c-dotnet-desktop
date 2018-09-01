@@ -223,7 +223,7 @@ namespace active_directory_b2c_wpf
         {
             foreach (var user in users)
             {
-                string userIdentifier = Base64UrlDecode(user.HomeAccountId.Identifier.Split('.')[0]);
+                string userIdentifier = user.HomeAccountId.ObjectId;
                 if (userIdentifier.EndsWith(policy.ToLower())) return user;
             }
 
