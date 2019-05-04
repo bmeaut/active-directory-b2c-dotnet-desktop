@@ -8,16 +8,16 @@ namespace active_directory_b2c_wpf
     /// </summary>
     public partial class App : Application
     {
-        private static string Tenant = "fabrikamb2c.onmicrosoft.com";
-        private static string ClientId = "841e1190-d73a-450c-9d68-f5cf16b78e81";
-        public static string PolicySignUpSignIn = "b2c_1_susi";
+        private static string Tenant = "bmedotnet.onmicrosoft.com";
+        private static string ClientId = "3dcd6ad2-38c6-4387-a80d-85ed1043b7f0";
+        public static string PolicySignUpSignIn = "B2C_1_il207";
         public static string PolicyEditProfile = "b2c_1_edit_profile";
         public static string PolicyResetPassword = "b2c_1_reset";
 
-        public static string[] ApiScopes = { "https://fabrikamb2c.onmicrosoft.com/helloapi/demo.read" };
-        public static string ApiEndpoint = "https://fabrikamb2chello.azurewebsites.net/hello";
+        public static string[] ApiScopes = { "https://bmedotnet.onmicrosoft.com/labapp/demo.read" };
+        public static string ApiEndpoint = "https://localhost:5001/api/values";
 
-        private static string BaseAuthority = "https://login.microsoftonline.com/tfp/{tenant}/{policy}/oauth2/v2.0/authorize";
+        private static string BaseAuthority = "https://bmedotnet.b2clogin.com/tfp/{tenant}/{policy}/oauth2/v2.0/authorize";
         public static string Authority = BaseAuthority.Replace("{tenant}", Tenant).Replace("{policy}", PolicySignUpSignIn);
         public static string AuthorityEditProfile = BaseAuthority.Replace("{tenant}", Tenant).Replace("{policy}", PolicyEditProfile);
         public static string AuthorityResetPassword = BaseAuthority.Replace("{tenant}", Tenant).Replace("{policy}", PolicyResetPassword);

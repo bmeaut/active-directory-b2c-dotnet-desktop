@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -29,7 +30,7 @@ namespace active_directory_b2c_wpf
             IEnumerable<IAccount> accounts = await App.PublicClientApp.GetAccountsAsync();
             try
             {
-                authResult = await (app as PublicClientApplication).AcquireTokenInteractive(App.ApiScopes)
+                authResult = await app.AcquireTokenInteractive(App.ApiScopes)
                     .WithParentActivityOrWindow(new WindowInteropHelper(this).Handle)
                     .WithAccount(GetAccountByPolicy(accounts, App.PolicySignUpSignIn))
                     .ExecuteAsync();
@@ -135,6 +136,7 @@ namespace active_directory_b2c_wpf
         /// <returns>String containing the results of the GET operation</returns>
         public async Task<string> GetHttpContentWithToken(string url, string token)
         {
+            System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
             var httpClient = new HttpClient();
             HttpResponseMessage response;
             try
